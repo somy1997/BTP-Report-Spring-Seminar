@@ -1,0 +1,840 @@
+% Discussion - Discuss the issues that you have got in the system, an idea about how you are trying to solve those. 
+% Chapter Template
+
+\chapter{Distributed Algorithm} % Main chapter title
+
+\label{Chapter 5} % Change X to a consecutive number; for referencing this chapter elsewhere, use \ref{ChapterX}
+
+\lhead{Chapter 5. \emph{Distributed Algorithm}} % Change X to a consecutive number; this is for the header on each page - perhaps a shortened title
+
+\section{Assumptions}
+
+We take the following assumptions for our distributed system :
+
+{
+\singlespacing
+\begin{itemize}
+    \item Each user has a unique id
+    \item Each user knows other users
+    \item Each user is a node in itself
+    \item More than 2/3rd of the users (or specifically the committee members) are honest (non-faulty and form the largest sub) in the system (non-faulty)
+    \item New requests for bond coin keep coming in
+    \item Each user has a unique public address known to other user while its active
+    \item Asynchronous system (Network Faults can happen)
+    \item Eventually synchronous system (Eventually all network faults would be resolved)
+    \item Reliable connection
+    \item Each function is executed atomically
+\end{itemize}
+}
+
+\section{Abbreviations}
+
+Following are the abbreviations used to denote some fields and classes :
+{
+\singlespacing
+\begin{itemize}
+    \item id = User's ID
+	\item mt = Transaction Type
+	\item sid = Sender's ID
+	\item rid = Reciever's ID
+	\item t = Timestamp, can also be the id of the last block seen by the user to avoid time conflicts
+	\item cc = CashCoin
+	\item bc = BondCoin
+	\item pk = Public Key of a user
+	\item sk = Secret Key / Private Key of a user
+	\item val = Transaction amount value that a user wants to send to another user
+	\item h = hash obtained on applying a verifiable random function on the message using sk
+	\item p = proof for verifying the hash of a message using that user's pk
+	\item pa = public address for committee to communicate with this node during consensus
+	\item fb = First Block in which a user starts giving consensus
+	\item lb = Last Block after which a user stops giving consensus
+	\item cps = Cryptocurrency Participation Score
+	\item k = The number of blocks till which a transaction is valid. If a transaction is more than 
+\end{itemize}
+}
+
+\section{Message Types}
+
+Following messages will be exchanged in the system :
+
+{
+\singlespacing
+\begin{enumerate}
+    \item Transfer : Message gossiped by the a node with id sid to send val amount of cashcoins to a node with id rid at timestamp t.
+    \begin{verbatim}
+Message Transfer
+{
+    mt
+    sid
+    rid
+    val
+    tc
+    t
+    h
+    p
+}
+    \end{verbatim}
+    \item RequestBC : Message requesting to convert cashcoin to bondcoin and become a member of the committee.
+    \begin{verbatim}
+Message RequestBC
+{
+    mt
+    sid
+    pa
+    tc
+    t
+    h
+    p
+}
+    \end{verbatim}
+    \item RequestCC : Message requesting to convert bondcoin to cashcoin before maturity.
+    \begin{verbatim}
+Message RequestCC
+{
+    mt
+    sid
+    tc
+    t
+    h
+    p
+}
+    \end{verbatim}
+    \item ChangePK : Message requesting to change pk.
+    \begin{verbatim}
+Message ChangePK
+{
+    mt
+    sid
+    pk // New Public Key
+    tc
+    t
+    h
+    p
+}
+    \end{verbatim}
+    \item Join : Message requesting to join the system as a new user. The new id would be mentioned in the next few blocks as confirmation.
+    \begin{verbatim}
+Message Join
+{
+    mt
+    pk
+    tc
+    t
+    h
+    p
+}
+    \end{verbatim}
+    \item BlockCommit : Message broadcasted to give info about a new block.
+    \begin{verbatim}
+Message BlockCommit
+{
+    mt  // type of message
+    sid // sender id
+    block // block list element
+    h // hash
+    p // proof
+}
+    \end{verbatim}
+\end{enumerate}
+}
+
+\section{Variables stored at each node}
+
+{
+\singlespacing
+\begin{enumerate}
+    \item myid = The ID of the user. This is allocated by the system when the user joins for the first time. It is an unsigned number and 0 is reserved for nodes who haven't joined yet. This id is used to index a user's information in the database.
+	\item mysk = Private/Secret Key of the user. This is the only private state of the node (same as in algorand) and is used to sign the messages sent by it.
+	\item mypk = The public key of the user. This key is advertised by the node so that other nodes can use it to verify its messages, it is unique to a node.
+	\item mypa = The public address of the user for other users to send message when it takes part in the consensus. This address is only required when the user requests for a BondCoin.
+	\item myfb = The most recent block from which user start participating in consensus
+	\item mylb = The most recent block after which user stop participating in consensus
+	\item mytc = User's transaction count to distinguish between two of its transaction in the same block, alternative to timestamp.
+	\item hblock = Hash of the newest block seen.
+	\item nusr = Number of users in the system, used to give id to a new user.
+	\item bcuncommitted = Blocks heard but not yet committed. It is a priority queue arranged with respect to bid.
+	\item trnuncommitted = Transactions heard but not committed. Transactions are arranged according to last block seen t and no duplicates are stored. The transactions are only stored by prospective BondCoin owners.
+	\item nbr = Nearest neighbours in the network, information given by the network. This information is used for Distributed Broadcast of messages.
+	\item bcq = A queue of users who have the bond coins and are participating in the consensus or going to participate in the future. No user can be twice in this q at a time. users in the queue can be accessed using their ids. Its like a dictionary but like a priority queue arranged using lb or fb. Implemented using double ended queue.
+    Each element of the queue has following definition.
+\begin{verbatim}
+QueueElement BCUser
+{
+    id // ID of the user
+    pk // Public Key of the user
+    pa // Public Address of the user
+    fb // first Block giving consensus
+    lb // last Block giving consensus
+    active // 1 if user is participating in consensus
+}
+\end{verbatim}
+    \item usrd = A dictionary of users which maps a user's id (key here) to all the information about that user.
+The values in the dictionary would have following definition
+\begin{verbatim}
+DictionaryKey id
+DictionaryValue User
+{
+    pk
+    lastpa
+    cc
+    cps
+    fb  // the first block from which it joined
+}
+\end{verbatim}
+    \item bcl = A list of blocks which acts as a unified ledger. Each block is a collection of transactions. Each transaction contains the original request and the response given after the consensus. A transaction is included in a block only if it is successful.
+Each transaction has the following definition.
+\begin{verbatim}
+ListElement Transaction
+{
+    treq // Transaction Request, JSON string
+    tres // Transaction Response, JSON string
+}
+\end{verbatim}
+Each transaction can be of following types :
+    \begin{enumerate}
+        \item Transfer
+        \begin{verbatim}
+treq = 
+{
+    mt = `Transfer'
+    sid
+    rid
+    val
+    tc
+    t
+    h
+    p
+}
+tres = 
+{
+    valfinal // Value transferred to the reciever after 
+deducting the transaction fees
+}
+        \end{verbatim}
+        \item RequestBC
+        \begin{verbatim}
+treq = 
+{
+    mt = `RequestBC'
+    sid
+    pa
+    tc
+    t
+    h
+    p
+}
+tres = 
+{
+    fb
+    lb
+}
+        \end{verbatim}
+        \item RequestCC
+        \begin{verbatim}
+treq = 
+{
+    mt = `RequestCC'
+    sid
+    tc
+    t
+    h
+    p
+}
+tres =
+{
+    lb
+    valfinal // Value to be added to user's account after 
+putting fine on it. Fine put on the user as transaction 
+fees for converting bc to cc before maturity.
+}    
+        \end{verbatim}
+        \item ChangePK
+        \begin{verbatim}
+treq = 
+{
+    mt = `ChangePK'
+    sid
+    pk // New Public Key
+    tc
+    t
+    h
+    p
+}
+tres =
+{
+    fb // ID of the block from which the new public key 
+would be valid
+}    
+        \end{verbatim}
+        \item Join
+        \begin{verbatim}
+treq = 
+{
+    mt = `Join'
+    pk
+    tc
+    t
+    h
+    p
+}
+tres =
+{
+    id // id of the new user
+    fb // ID of the block from which the user would be valid
+}
+        \end{verbatim}
+    \end{enumerate}
+Each block has the following definition.
+\begin{verbatim}
+ListElement block
+{
+    bid // BlockID
+    bpid // BlockProposerID
+    tlist // List of Transaction Objects
+    memlist // List of ids of BondCoin holders who participated 
+in this round
+    trnfees // Fees earned by each BondCoin owner in this round
+    retirelist // List of ids of BondCoin holders who retire 
+after this round
+    joinlist // List of ids who are given allocated new bondcoins
+    nusr // No. of users in the system after accepting new join 
+requests in this block
+    hprev // hash of previous block
+    hq // hash of bcq after applying changes of this block of 
+transactions
+}    
+\end{verbatim}
+\end{enumerate}
+}
+
+\section{Initialisation}
+{
+\singlespacing
+\begin{enumerate}
+    \item myid = 0 or id given by the system when joined the first time
+	\item mysk = secret key chosen by me
+	\item mypk = public key corresponding to mysk
+	\item mypa = public address given by the network to which other users can send messages to communicate with me
+	\item mytc = 0 or transaction count of the last transaction
+	\item hblock = 0 or hash of the last block in bcl
+	\item nusr = 0 or nusr in the last block in bcl
+	\item bcq = empty or Queue of users mirrored from a bondcoin holder
+	\item usrd = empty or Dictionary of users mirrored from a bondcoin holder
+	\item bcl = empty or List of blocks mirrored from a bondcoin holder
+	\item bcuncommitted = empty
+	\item trnuncommitted = empty
+	\item nbr = nearest neighbours in the network, information given by the network
+\end{enumerate}
+}
+
+\section{Functions}
+
+\subsection{Abstract Functions}
+These functions are called by other functions and serve specific tasks.
+\begin{enumerate}
+    \item Prepare : This function is called before pushing or broadcasting any message. This function sets t, h, p in a message
+    \begin{lstlisting}
+Abstract Prepare (Message M)
+{
+    if M.mt in {Transfer, RequestBC, RequestCC, ChangePK, Join} :
+        // Can use some mutex while assigning timestamp to avoid 2 transactions getting same timestamp. Instead using tc (transaction count) here. Use mutex while assigning the tc value and incrementing it.
+        mytc++
+        M.tc = mytc
+        M.t = bcl[-1].bid
+    M.h = M.p = 0
+    (M.h, M.p) = VRF (M, mysk)
+}
+    \end{lstlisting}
+    \item Push : This function sends the message to all the bcowners in the user's queue. Put flag as 1 to send to only active members and 2 to send to all members.
+    \begin{lstlisting}
+Abstract Push (Message M, flag)
+{
+    for usr in bcq :
+        if flag == 1 and usr.active == 0 :
+            break
+        if usr.active == -1 :
+            continue
+        Send M to usr.pa
+}
+    \end{lstlisting}
+    \item Broadcast : This function is used to broadcast a message to the network.
+    \begin{lstlisting}
+Abstract Broadcast (Message M)
+{
+    // Implementing distributed broadcast here
+    for usr in nbr :
+        Send M to usr
+}
+    \end{lstlisting}
+    \item Same : This function is for comparing two messages
+    \begin{lstlisting}
+Abstract same (treq t1, treq t2)
+{
+    // Here, we can compare sid but its not generic for all kinds of messages and following four will be enough
+    // Added timestamp to distinguish between 2 similar transactions sent in the same block
+
+    // Compare transaction type
+    if t1.mt != t2.mt :
+        return false
+    
+    // Compare transaction count
+    if t1.tc != t2.tc :
+        return false
+
+    // Compare block of transaction
+    if t1.t != t2.t :
+        return false
+    
+    // Compare hash
+    if t1.h != t2.h :
+        return false
+    
+    // Compare proof
+    if t1.p != t2.p :
+        return false
+
+    // This means that it is the same transaction, return true
+    return true
+}
+    \end{lstlisting}
+    \item Response : This function returns if the transaction was successful.
+    \begin{lstlisting}
+Abstract Response (Message M)
+{
+    // Check till k blocks if the transaction has been committed
+    for i = M.t + 1 to M.t + k :
+        // Check in every TCommit time if the new block has been added to bcl, here TCommit is avg commit time of a block
+        while bcl[-1].bid < i :
+            wait(TCommit)
+        
+        // Check in every transaction of the block to find own transaction
+        for trn in enumerate(bcl[i].tlist) :
+            if same(trn.treq, M) :
+                return (true, trn.tres)
+    
+    // No match means the transaction wasn't accepted
+    return (false, null)
+}
+    \end{lstlisting}
+    \item : validUser : This function checks if the user has joined the system ie. it is a valid user or not.
+    \begin{lstlisting}
+Abstract validUser()
+{
+    // Check if the user is joined or not
+    if myid == -1 :
+        raiseError (' User not yet joined in the system ')
+}
+    \end{lstlisting}
+    \item checkBCOwner : This function checks if a usr is BCOwner, pass flag as 1 to search only in current members and flag as 2 to search in all users.
+    \begin{lstlisting}
+Abstract checkBCOwner(id, flag)
+{
+    for usr in bcq :
+        if flag == 1 and usr.active == 0 :
+            break
+        if usr.active == -1 :
+            continue
+        if usr.id == id :
+            return true
+    return false
+}
+    \end{lstlisting}
+    \item verify : This function verifies a message sent by a user.
+    \begin{lstlisting}
+Abstract verify(Message M)
+{
+    if M.mt == Join :
+        return VRFVerify(M, M.pk, M.h, M.p) // VRFVerify takes care of hashing when M.h = M.p = 0
+    return VRFVerify()
+}
+    \end{lstlisting}
+    \item ExecuteBlock : This function executes the transaction of a new block. If flag is 0 means just verifying the block, if flag is 1 means executing it.
+    \begin{lstlisting}
+Abstract ExecuteBlock (block, bcq, usrd, flag)
+{
+    if flag == 0 :
+
+        if block.bid != bcl[-1].bid + 1 :
+            return false
+        
+        // Can also check for bpid and put a hash, proof accordingly here
+
+        // Can also check for priority of block proposer
+
+        // Can make the above two commented checks in the function collecting block proposals itself
+        
+        // Check if previous hash matches
+        if hblock != block.hprev :
+            return false
+
+        <Check if memlist matches the current active users in bcq>
+
+        bcq = copy(bcq)
+        usrd = copy(usrd)
+        input = output = 0
+        // Can also check the different memberlist or remove them entirely except memlist
+
+    // Remember to execute RequestCC after RequestBC, can give a pass thru tlist at the end for RequestCC
+    for trn in block.tlist :
+        if flag == 0 and verify(trn.treq) == false :
+            return false
+        switch(trn.treq.mt)
+            case Transfer :
+                usrd[trn.treq.sid].cc -= val
+                usrd[trn.treq.rid].cc += trn.tres.valfinal
+                if flag == 0 :
+                    if usrd[trn.treq.sid].cc < 0 :
+                        return false
+                    input += val
+                    output += trn.tres.valfinal
+            
+            case RequestBC :
+                usrd[trn.treq.sid].cc -= 1
+                bcu = newBCUser
+                bcu.id = trn.treq.sid
+                bcu.pk = usrd[bcu.id].pk
+                bcu.pa = trn.treq.pa
+                bcu.fb = trn.tres.fb
+                bcu.lb = trn.tres.lb
+                bcu.active = 0
+                bcq.push(bcu)
+                if flag == 0 :
+                    if usrd[trn.treq.sid].cc < 0 :
+                        return false
+                    input += 1
+                    output += 1
+            
+            case RequestCC :
+                bcq[trn.treq.sid].active = -1
+                usrd[trn.treq.sid].cc += trn.tres.valfinal
+                if flag == 0 :
+                    input += 1
+                    output += trn.tres.valfinal
+            
+            case ChangePK :
+                usrd[trn.treq.sid].pk = trn.treq.pk
+            
+            case Join :
+                usrd[trn.tres.id] = new User
+                usrd[trn.tres.id].pk = trn.treq.pk
+                usrd[trn.tres.id].lastpa = 0
+                usrd[trn.tres.id].cc = 0
+                usrd[trn.tres.id].cps = thres // here thres is the threshold
+                usrd[trn.tres.id].fb = trn.tres.fb
+    
+    if flag == 0 :
+        output += len(memlist)*block.trnfees
+        if input != output :
+            return false
+        
+        if len(usrd.keys) != block.nusr :
+            return false
+
+    // Add fees to members account
+    for id in memlist :
+        usrd[id].cc += block.trnfees
+    
+    // Pop retired members from bcq
+    while bcq != empty and bcq.head.lb == bcl[-1].bid :
+        bcq.pop()
+    
+    if flag == 0 :
+        hq = hash(bcq)
+        if hq != block.hq :
+            return false
+        return true
+    
+    // Means flag = 1
+    hblock = hash(block)
+    nusr = block.nusr
+    
+}
+    \end{lstlisting}
+\end{enumerate}
+
+\subsection{Threads}
+These functions run independently and may not be atomic.
+\begin{enumerate}
+    \item Sentinel : This thread runs at the start and tries to get user updated with the latest blocks.
+\begin{lstlisting}
+Thread Sentinel ()
+{
+    // run at all times except stops only when user goes offline
+
+    time.reset()
+    while(true) :
+        
+        // Resync if its past resynchronisation period
+        if time.gone() > tresync :
+            < Explicitly get missing blocks from other users and put it in bcuncommitted and broadcast them too >
+            time.reset()
+
+        
+        // Commit the uncommitted block if any
+        while bcuncommitted != empty and bcuncommitted.head.bid == bcl[-1].bid + 1 : // Here, in case of a bcl empty would need to add another condition, instead either put a dummy block at the start of bcl with id 0 or replace bcl[-1].bid with len(bid), if going with the former can also get the genesis block as a response to the Join message.
+            bcl.append(bcuncommitted.head)
+            bcuncommitted.pop()
+            ExecuteBlock(bcl[-1], bcq, usrd, 1)
+        
+        // Listen for new message
+        M = Listen() 
+
+        // Verify only if not a new user
+        if bcl != empty :
+            verify(M)
+
+        // Commit Message
+        if M.mt == BlockCommit :
+            
+            // Already updated
+            if bcl[-1].bid >= M.block.bid :
+                continue
+            else :
+                bcuncommitted.push(M.block)
+
+                // Only broadcast further if in the network
+                if myid != 0 :
+                    M.sid = myid
+                    Prepare(M)
+                    Broadcast(M)
+
+        else if M.mt in {Transfer, RequestBC, RequestCC, ChangePK, Join} :
+            // If I am a member
+            if bcl[-1].id < mylb :
+                trnuncommitted.push(M) // push removes duplicates and puts in the correct position in the queue, it also removes a transaction if already committed using function Response, and removes those which are already expired
+
+            // If I am not an active member ignore
+            else :
+                continue
+
+                
+}
+\end{lstlisting}
+    \item Participate : This thread runs for the time the user has to participate in the consensus.
+\begin{lstlisting}
+Thread Participate()
+{
+    // mylb takes care that I am a member, for voting will also check if an active member, in normal operation the thread itself will destroy
+    while bcl[-1].bid < mylb :
+        <remove transactions from truncommitted who are accepted and those for which this block is the last hope and still they are not valid>
+        
+        // Take part only if in next block we are an active bcowner
+        if bcl[-1].bid + 1 >= myfb :
+            if <Proof of stake/current block makes me a proposer> :
+                <Validate the transactions seen so far>
+                <Propose a block>
+                <Put priority>
+                <Push it to the current active members>
+                <Add it to own proposal list>
+            
+            while <proposal time> :
+                <pop a new proposal>
+                <check the validity of proposal>
+                <put it as this round's block if highest priority> 
+
+            <vote for the highest proposal seen>
+
+            while <voting time> :
+                <pop a vote>
+                <add the vote>
+                <see if the votes for a particular block exceeds 2/3rds of the total votes>
+                <if it does commit this block and broadcast>
+                <break> 
+
+        <wait till new block is committed>
+        <if not committed within some time restart consensus>
+
+    destroy truncommitted
+    Stop this thread
+}
+\end{lstlisting}
+\end{enumerate}
+
+\subsection{Public Functions}
+These functions can be called directly by the user or are called depending on the events triggered by actions of the user.
+\begin{enumerate}
+    \item Wakeup : This function is called when the node boots up.
+    \begin{lstlisting}
+Wakeup () :
+    Start thread Sentinel()
+    \end{lstlisting}
+    \item Shutdown : This function is called when the node is shutting down.
+    \begin{lstlisting}
+Shutdown () :
+    If myid in bcq :
+        <Push RequestCC>
+        <Wait till the request is accepted>
+    Stop thread Sentinel()
+    \end{lstlisting}
+    \item Transfer : This function is called by the user when it wants to transfer money to another user.
+    \begin{lstlisting}
+Transfer (rid, val)
+{
+    // Check if the user is joined or not
+    validUser()
+    
+    // Check if reciever is valid or not
+    if rid > nusr :
+        raiseError (' Reciever is not valid ')
+
+    // Check if val is valid
+    if val > usrd[myid].cc :
+        raiseError (' Not enough cashcoins to send ')
+
+    // Prepare the message for sending
+    mtransfer = new Message
+    mtransfer.mt = Transfer
+    mtransfer.sid = myid
+    mtransfer.rid = rid
+    mtransfer.val = val
+
+    // Set tc, t, h, p
+    Prepare (mtransfer)
+
+    // Send the message to all the bcowners including those who have not yet started
+    Push (mtransfer, 2)
+
+    // Get response for the transaction
+    (success, tres) = Response (mtransfer)
+
+    // As the user's own accounts will also be handled in a general way, no use of tres here
+
+    // return if the transaction was successful
+    return success
+}
+    \end{lstlisting}
+    \item RequestBC : This function is called by the user when it wants to participate in the consensus
+    \begin{lstlisting}
+RequestBC ()
+{
+    // Check if the user is joined or not
+    validUser()
+
+    // Check if the user has enough cashcoins
+    if 1 > usrd[myid].cc :
+        raiseError (' Not enough cashcoins to convert to bondcoin ')
+
+    // Prepare the message for sending
+    mrequestBC = new Message
+    mrequestBC.mt = RequestBC
+    mrequestBC.sid = myid
+    mrequestBC.pa = mypa
+
+    // Set tc, t, h, p
+    Prepare (mrequestBC)
+
+    // Send the message to all the bcowners including those who have not yet started
+    Push (mrequestBC, 2)
+
+    // Get response for the transaction
+    (success, tres) = Response (mrequestBC)
+
+    if success :
+        // Set myfb and mylb
+        myfb = tres.fb
+        mylb = tres.lb
+        create tnuncommitted
+        start thread Particpate()
+
+    // return if the transaction was successful
+    return success
+}
+    \end{lstlisting}
+    \item RequestCC : This function is called by the user when it wants to convert its bondcoin before maturity.
+    \begin{lstlisting}
+RequestCC ()
+{
+    // Check if the user is joined or not
+    validUser()
+
+    // Check if the user is in bcq
+    if not checkBCOwner(myid, 2) :
+        raiseError (' User not in BCOwner queue ')
+
+    // Check if the user holds bc now
+    if (bcl[-1].bid+1) == lb :
+        raiseError (' User in BCOwner queue but this is last block ')
+    
+    // Prepare the message for sending
+    mrequestCC = new Message
+    mrequestCC.mt = RequestCC
+    mrequestCC.sid = myid
+    
+    // Set tc, t, h, p
+    Prepare (mrequestCC)
+
+    // Send the message to all the bcowners including those who have not yet started
+    Push (mrequestCC, 2)
+
+    // Get response for the transaction
+    (success, tres) = Response (mrequestCC)
+
+    if success :
+        // Set mylb
+        //myfb = tres.fb
+        mylb = tres.lb
+        destroy trnuncommitted // can also just clear it
+        Stop Thread Participate()
+
+    // return if the transaction was successful
+    return success
+}
+    \end{lstlisting}
+    \item ChangePK : This function is called by the user when it wants to update its public key.
+    \begin{lstlisting}
+ChangePK (newpk)
+{
+    // Check if the user is joined or not
+    validUser()
+
+    // Prepare the message for sending
+    mchangePK = new Message
+    mchangePK.mt = ChangePK
+    mchangePK.sid = myid
+    
+    // Set tc, t, h, p
+    Prepare (mchangePK)
+
+    // Send the message to all the bcowners including those who have not yet started
+    Push (mchangePK, 2)
+
+    // Get response for the transaction
+    (success, tres) = Response (mchangePK)
+
+    if success :
+        // Set mypk
+        mypk = newpk
+
+    // return if the transaction was successful
+    return success
+}
+    \end{lstlisting}
+    \item Join : Called by a user to join the system for the first time. The bcowners check if the public key provided by the user is unique or not. If it is the user is given a unique id after which the user can start using the system. On success, the user would start mirroring the previous blocks, queue of users and dictionary of users from any member of the system.
+    \begin{lstlisting}
+Join ()
+{
+    // Can check if the user already exists but it might happen that same client wants to join as multiple user so we allow it here.
+
+    // Prepare the message for sending
+    mjoin = new Message
+    mjoin.mt = Join
+    mjoin.pk = mypk
+    
+    // Set tc, t, h, p
+    Prepare (mchangePK)
+
+    // Send the message to all the bcowners including those who have not yet started
+    Push (mjoin, 2)
+
+    // Get response for the transaction
+    (success, tres) = Response (mchangePK)
+
+    if success :
+        // Set myid
+        myid = tres.id
+
+    // return if the transaction was successful
+    return success
+}
+    \end{lstlisting} 
+\end{enumerate}

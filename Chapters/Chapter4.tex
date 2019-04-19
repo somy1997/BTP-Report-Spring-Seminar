@@ -1,0 +1,54 @@
+% Discussion - Discuss the issues that you have got in the system, an idea about how you are trying to solve those. 
+% Chapter Template
+
+\chapter{Discussion} % Main chapter title
+
+\label{Chapter 4} % Change X to a consecutive number; for referencing this chapter elsewhere, use \ref{ChapterX}
+
+\lhead{Chapter 4. \emph{Discussion}} % Change X to a consecutive number; this is for the header on each page - perhaps a shortened title
+
+\section{Properties of the system}
+
+Here, we prove the safety and liveness properties of the system.
+
+\subsection{Safety}
+
+Since, we adding users in each round. Therefore, if we use a fixed maturity duration for a bond coin. Then in every round, we have some outgoing users and some incoming users.\\
+Also, since the threshold for committing a block is two-thirds of the number of bond coins. Hence, between two consecutive rounds there will be atleast one honest user who has committed the block in that round. Since, the new bond coins are only allocated if the user's hashblock matches with the latest hash. Hence, if an honest user commits a block with bid $x$ and another honest user has committed a block with bid $y$ in the past when it had owned a bond coin, then $y$ must appear in the ledger of $x$.\\
+Now, since more than two-thirds of the users are honest and more than two-thirds of the votes are needed for successful commit, hence a block would be committed only if atleast one-half of honest users commit it. And, honest users get consensus only if the block is correct hence the Safety property is guaranteed.
+
+\subsection{Liveness}
+
+Since, more than two-thirds of the users are honest, and a transaction can be accepted within k blocks, hence, it would be picked up by atleast one honest user and broadcasted to others. In case the highest priority block proposer is not an honest user, and the user sends two different sets of blocks then consensus would fail and a new consensus would take place with new priorities. If the highest priority block proposer sends out only one block and doesn't include this transaction then even though this block gets committed there is a high chance that an honest user will include it within k blocks. Hence, liveness property is guaranteed.
+
+\section{Problems in System Design}
+
+Here, we note some of the problems and boundary cases that might occur during the design and execution of the system and we try to give some plausible solutions.
+
+\begin{enumerate}
+    \item We know that CashCoins are liquid and can be transferred from one user to another. But, what if a user wants to transfer his voting rights to another user? If this user simply transfers it then he would also have to share the public-private key associated with this coin, but these are digital quantities and can be copied and can lead to the free-rider problem.\\
+    Solution : Here, we assume that BondCoins are illiquid and non-transferable. If some user wants to transfer them, then he first has to convert the Coin to CashCoin and send these to the target user who then can convert these back to a BondCoin. This also avoids the free rider problem as when the target user gets his BondCoin, he would also get a new key pair associated with it.
+    \item The bond coins are going to be minted using PoW. Once, all the bond coins are minted, the system adopts PoS system. PoW means we are finding some nonce which satisfies some properties, (In case of bitcoin, it had to be less than a given number). But, here the each bond coin is associated with a public and a private key pair which satisfy their own properties. How does the two gets associated?\\
+    Solution : Here, the nonce and key-pairs are not related. A user can get a key pair even when PoS has taken over. We use El Gamal Cryptosystem for getting the private-public key pair associated with the BondCoin. This Cryptosystem is based on Elliptic Curve Cryptography (ECDLP) and provides better security with lesser key size. The Base point is common for all users. The private key can be decided by the winner of the current round randomly and based on it a public key can be chosen. But, once its decided, the user cannot change it and has to wait till the BondCoin matures. If he wants to change it then he would have to convert it to CashCoin and then again to BondCoin to choose a new one.
+    \item What happens if a user who already owns a BondCoin wins another round while PoW consensus is active?\\
+    Solution : If a user wins another round while PoW consensus is active, then he gets to commit that block but the BondCoin that is minted gets added to his account as CashCoin without any penalty. This is done to make sure that each validators has equal voting rights and hence own only one BondCoin with them.
+    \item Here we note that PoW algorithm is only for minting bond coins. So, do the users don’t transact till all the bond coins are minted or does the peer minting the next bond coin becomes the leader for that round and commits the block of transactions to the ledger and once all the minting is over, PoS takes over and only those peers can take part in validation who are holding the bond coins?\\
+    Solution : Here, we go with the choice that when the PoW consensus is active, the users can still transact and transaction fees are not taken from them. This is done to invite new users to the system and to increase the validators in the system. To incentivise users to participate in the consensus, the BondCoin minted in the current round is paid to the winner of the current round. Note that even after winning once, the users would still want to participate in the consensus to increase the CashCoins in their account.
+    \item Each BondCoin comes with a maturity duration d. How is this maturity duration decided? What happens to the keys of the BondCoin once it gets expired and gets converted into CashCoin?\\
+    Solution : Currently, this maturity duration is kept as a constant. Eg: 1 month. And, we plan to decide this value emphirically. Each BondCoin comes with a manufacture date, which is stored in the ledger. Once a BondCoin is expired, it gets added as CashCoins to the user account and the keys become useless. This process takes place the first time user transacts after his BondCoin is expired. If he tries to vote using the old keys then his vote is discarded during the expiration check phase.
+    \item Since, the CashCoins are not converted automatically to BondCoins, what happens when there is no BondCoin left in the system?\\
+    The situation where no BondCoins are left in the system is hard to occur. As the BondCoins in the system decrease, the transaction fees would decrease. In this case, automatically the demand for BondCoins would increase as the few users who are owners of the last few BondCoin would enjoy more shares of the transaction fees by themselves. But, no BondCoin situation can occur only when the last of BondCoins also got matured automatically and no other user converted their CashCoin into a BondCoin before their expiration which would bring the system to a standstill. If there are no BondCoin in the system then there would be no validators in the system and no user would be able to transact and hence the CashCoins in their account would become useless. In this unlikely situation, we suggest that the PoW system is restarted so that the BondCoins in the system can be increased and users can enjoy transactions without paying the fees and do not have to leave the system.
+    \item Why is there a penalty for converting BondCoin to CashCoin? How is its amount fixed?\\
+    Solution : The BondCoin is like a contract given to user to participate in the validation process during its maturity period. Its like a fixed deposit done in bank, on which you get the interest during the period but you can use the money only after it matures, if you take the money out before it matures then you have to pay a penalty. In a similar way, this penalty is imposed on those users who want to do away with their responsibility of participating in the validation process. The amount is fixed based on the number of BondCoins currently in the system. More the number of BondCoins, more the penalty.
+
+\end{enumerate}
+
+\section{Plausible attacks}
+
+Here, we assume that the block has been prepared and validators are decided, we only need to consider attacks that can be made while committing this block to the ledger.
+
+\begin{enumerate}
+    \item Adversary can be the owner of majority of bond coins. Adversary can make multiple accounts with only enough cash coin to convert them into bond coins.
+    \item If in response to above, the bond coins are made larger in number then network attacks would be easier. Adversary may be able to slow down the network or partition some nodes.
+    \item Instead of buying the bond coins itself, adversary may hack prominent accounts holding bond coins. It's useful as they are gonna be valid for duration d.
+\end{enumerate}

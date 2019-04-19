@@ -1,0 +1,23 @@
+% Conçlusion and Future Works. 
+% Chapter Template
+
+\chapter{Conclusion and Future Works} % Main chapter title
+
+\label{Chapter 6} % Change X to a consecutive number; for referencing this chapter elsewhere, use \ref{ChapterX}
+
+\lhead{Chapter 6. \emph{Conclusion and Future Works}} % Change X to a consecutive number; this is for the header on each page - perhaps a shortened title
+
+In this report, we saw how the number of validators for a POS system can be dynamic and may be determined by the market parameters. The POS systems were better than POW systems because they don't waste computational power in redundant tasks but POS systems itself has some drawbacks. The proposed system tries to solve some of these drawbacks. The crux of the proposed system lies in the fact that all the validators are given equal voting rights so that adversary is also ripped off of the probabilistic advantage of gaining the control of the system which is prevalent in the recently proposed systems such as Algorand. In this system, gaining half the currency of the system is not enough for the adversary. He must have control over more than half of the BondCoins i.e. more than half of the computation power. And, as these BondCoins come with an expiry, the task of the adversary becomes more difficult.
+
+In future we would like to achieve the following objectives :
+\begin{enumerate}
+    \item We would like to explore how the system is affected if the maturity duration of a BondCoin is variable
+    \item We would like to devise a method to ensure that a minimum number of validators are always there in the network at a given point of time
+    \item We would like to explore how the system is affected if the BondCoin is also quantized. For eg : a group of users can combine their CashCoins to get one BondCoin. What would be the final vote of such a group of users?
+    \item Till now, we have assumed that all the validators remain active all the time. We would like to explore what happens if some of the validators crash or go offline.
+    \item We would like to tackle the geographical scalability of POS protocols and devise a solution for it.
+    \item We would like to scale the implemented system and run benchmark tests on it.
+    \item We would like to explore how charging fees for conversion of CashCoin to BondCoin affects the economy of the system.
+    \item We would like to prove the system's correctness under weaker assumptions.
+    \item Change the relation between BondCoins and transaction fees and analyse the new system.
+\end{enumerate}

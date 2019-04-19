@@ -1,0 +1,76 @@
+% Conçlusion and Future Works. 
+% Chapter Template
+
+\chapter{Related Works} % Main chapter title
+
+\label{Chapter 7} % Change X to a consecutive number; for referencing this chapter elsewhere, use \ref{ChapterX}
+
+\lhead{Chapter 7. \emph{Related Works}} % Change X to a consecutive number; this is for the header on each page - perhaps a shortened title
+
+In this section, we see what other kinds of protocols have been proposed to solve the age old state machine replication problem.
+
+\section{Bitcoin}
+
+The protocol on which the cryptocurrency Bitcoin is transacted, this was the earliest of the blockchain protocols. It follows a Proof of work consensus wherein nodes compete among themselves to solve a hard problem. And, whoever solves the problem gets to mine the next block and is accordingly rewarded. The protocol is permissionless that is any user can join and completely decentralized as there is no central authority validating the transactions.
+
+% \begin{itemize}
+%     \item It’s a public blockchain, i.e. permission-less, where anyone can join.
+%     \item The underlying technology components are cryptographic hash function, digital signature, private-and-public key encryption, peer-to-peer (P2P) network, and proof of work (POW) consensus algorithm.
+%     \item The protocol allows users to conduct non-reversible transactions without having to explicitly trust a third-party.
+%     \item Every node has the complete information on the blockchain, making the network a decentralized one.
+%     \item Transactions contain unique transaction ID, input Bitcoin address, the number of Bitcoins to be transferred, and the output Bitcoin address of the recipient.
+%     \item The transaction making process involves the initiator of the transaction, and ‘miner’, i.e. combination of special-purpose software, powerful hardware, and their user. The transaction initiator pays transaction fees to the miner, who tries to include the transaction in the next block. A block is processed in every 10 minutes, and the transactions included in that are then recorded in the blockchain. Creating a new block requires not only the transaction information of the current transaction, but also a reference to the last recorded block. The last recorded block isn’t known, and the miner needs to solve a complex cryptographic puzzle to find it, and this essentially involves a large number-crunching operation done at high-speed. For this, the miner needs to try one number after another, which requires high computing power. Majority of the participating nodes must approve the transaction. Since this is a decentralized network, it isn’t possible for anyone to capture majority of the computing power on the network, thus making the network very secure. Thus, while POW mining ensures high security of blockchain, it’s also computing-power-intensive, and requires high amount of energy.
+%     \item The transaction making process involves the initiator of the transaction, and ‘miner’, i.e. combination of special-purpose software, powerful hardware, and their user. The transaction initiator pays transaction fees to the miner, who tries to include the transaction in the next block. A block is processed in every 10 minutes, and the transactions included in that are then recorded in the blockchain. Creating a new block requires not only the transaction information of the current transaction, but also a reference to the last recorded block. The last recorded block isn’t known, and the miner needs to solve a complex cryptographic puzzle to find it, and this essentially involves a large number-crunching operation done at high-speed. For this, the miner needs to try one number after another, which requires high computing power. Majority of the participating nodes must approve the transaction. Since this is a decentralized network, it isn’t possible for anyone to capture majority of the computing power on the network, thus making the network very secure. Thus, while POW mining ensures high security of blockchain, it’s also computing-power-intensive, and requires high amount of energy.
+%     \item While the consensus mechanism requiring majority approval rules out foul play, it also creates scalability issues, since every node must load entire information on blockchain and participate in the transaction validation process. Bitcoin blockchain has recently implemented ‘Segregated Witness’ (SegWit) technology, which bypasses the limitation on block size, and separates signature information from the transaction data, to improve scalability of the network.
+% \end{itemize}
+
+\section{Ethereum}
+
+Ethereum blockchain has many similarities with Bitcoin protocol, for e.g.: It’s a public, permission-less blockchain; It uses the same technological backbones, for e.g. cryptographic hash function, private-and-public key encryption, P2P network, etc; POW consensus algorithm is used; There’s a native cryptocurrency, called Ether. Ether has the second highest market cap, behind only Bitcoin.
+
+However, unlike Bitcoin, which was built for allowing crypto payment transactions over a decentralized network, Ethereum was designed with much larger objectives in mind. Ethereum provides a blockchain platform, using which developers can launch their own blockchain projects, including their own cryptocurrencies. The platform, commonly called as ‘Ethereum Virtual Machine’ (EVM), has been used to launch over 1,000 DApps. Famous cryptocurrency projects such as VeChain and OmiseGo have been launched using EVM.\\
+Smart contracts make this possible. Smart contracts are pieces of code, which allows execution of legal functions, for e.g. taking control of an entity based on certain conditions, and transferring crypto tokens based on fulfilling required conditions. Smart contracts on the Ethereum platform are codes using Ethereum’s proprietary language Solidity, which is inspired by C++, Java, Python and JavaScript.\\
+DApps are applications where the backend code runs on a decentralized blockchain, and comprises of smart contracts. Ethereum has made wider adoption of blockchain possible, because of EVM, smart contracts and DApps.\\
+Ethereum also provides a way for the user to specify how much computing power will be expended for a transaction, by using a measure of processing power, called ‘Gas’. The user can specify a gas limit. If a transaction remains within that limit then it’s executed, however, if it exceeds the limit, then the changes are reverted. Simple payment transactions require less gas, whereas more complex operations, such as deployment of smart contracts, require more gas.
+
+\section{Ripple Protocol}
+Ripple protocol uses many of the features of Bitcoin or Ethereum, such as decentralized design, cryptographic hash functions, P2P network, and private-and-public key encryption. However, Ripple was designed specifically to facilitate fast and cheap global transfer of money, which necessitates several unique features.
+
+Users of Ripple can make payments to each other in either fiat currencies, or Ripple’s native cryptocurrency XRP. The transactions are cryptographically signed, and the protocol enables real-time gross settlement, allowing fast global payments.
+
+To achieve this, Ripple has designed the ‘Ripple Protocol Consensus Algorithm’ (RPCA), which uses a ‘proof of correctness’ concept. It works in the following manner:
+
+\begin{itemize}
+    \item All nodes apply RPCA every few seconds;
+    \item Upon reaching consensus (described below), a ledger is considered ‘closed’, and then it’s the last-closed ledger;
+    \item All nodes will have identical last-closed ledger;
+    \item RPCA happens in rounds, and in each round:
+    \begin{itemize}
+        \item Initially, each server takes all valid but unapplied transactions, and makes this list public in the form of a ‘candidate set’;
+        \item Each server has a unique node list (UNL), where all other servers queried by this server are listed;
+        \item Each server takes all candidate sets of all servers in its UNL, and makes a combined list, before voting on that list;
+        \item Transactions that receive more than the threshold of ‘yes’ votes are taken to the next round, and the others are either discarded or moved to the candidate list for the next round;
+        \item The final round requires 80\% of the servers on a servers UNL to agree on the transaction, before being applied to the ledger;
+    \end{itemize}
+    \item After applying all the approved transactions in the ledger, the ledger is closed, and becomes the new last-closed ledger.
+\end{itemize}
+Ripple is becoming increasingly popular, with more and more banks and payments providers using RippleNet to send money globally. XRP has the third highest market cap, and is lower to Bitcoin and Ether only.
+
+\section{Hyperledger}
+While public, permission-less blockchains have made it possible for many cryptocurrency projects to make a mark, wider adoption of blockchain is possible only when large enterprises adopt this technology. However, large enterprises have some specific requirements from blockchain technology, for e.g.:
+\begin{itemize}
+    \item Only trusted entities should join the network, because enterprises can’t have their proprietary information visible to everyone;
+    \item Enterprises need blockchains with high scalability and transaction speed;
+    \item Even among the trusted participants, access to information should be role-based.
+\end{itemize}
+Hyperledger consortium was formed by the Linux foundation, and many other partners such as IBM, Intel, SAP, Cisco, Daimler, and American Express, to design and develop enterprise blockchains.\\
+While Hyperledger has many projects such as Fabric, Sawtooth, etc, a few generic characteristics are following:
+\begin{itemize}
+    \item It’s a permissioned blockchain, only the entities explicitly trusted by the organization(s) can join it.
+    \item Consensus mechanism here looks at the entire transaction flow, and nodes have different roles, with different tasks. The nodes here are differentiated based on whether they are clients, peers or orderers. A client creates and invokes transactions. Peers maintain the ledger, receive ordered updates from orderers, upon which they commit the transaction into the ledger. A specific type of peers, called endorsers, check whether the transactions meet necessary conditions (for e.g. required signatures) and endorse them.
+    \item While this enterprise blockchain can be used in any industry, it’s not suitable for cryptocurrencies.
+\end{itemize}
+
+\section{Algorand}
+Algorand is a very knew blockchain protocol aimed at speeding up the transactions while scaling it to many users. Algorand uses sortition to select users to propose a new block or participate in the consensus. And, this takes place for each step of each round. The only drawback here is that the users don't have incentive to particpate in the consensus like other permissionless protocols give.
+

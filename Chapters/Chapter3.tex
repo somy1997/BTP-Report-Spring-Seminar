@@ -1,0 +1,230 @@
+% Solution Architecture - Discuss the solution architecture with reasoning at every step. AG will be there, so be very careful about using the distributed system terms and the solution that you are thinking of. 
+% Chapter Template
+
+\chapter{Solution Architecture} % Main chapter title
+
+\label{Chapter 3} % Change X to a consecutive number; for referencing this chapter elsewhere, use \ref{ChapterX}
+
+\lhead{Chapter 3. \emph{Solution Architecture}} % Change X to a consecutive number; this is for the header on each page - perhaps a shortened title
+
+%----------------------------------------------------------------------------------------
+%	SECTION 1
+%---------------------------------------------------------------------------------------
+\section{Assets in the network}
+
+Our blockchain has two native asset types; a liquid asset type and an illiquid asset type. Let’s call the illiquid one BondCoin and the liquid one CashCoin. The blockchain has relatively small number of total coins; lets label this number maxCoins. Each coin is represented by a public-private key pair.
+
+\subsection{BondCoins}
+
+\begin{enumerate}
+    \item To start with, a PoW consensus algorithm only mints BondCoins.
+    \item After all the BondCoins have been minted, the PoW algorithm subsides and PoS takes over. Owners of BondCoins are the validators.
+    \item The private-key of a BondCoin can be used to cast votes during the various phases of the BFT PoS consensus protocol. We can assume the BLS signature aggregation scheme as proposed in the ByzCoin paper for aggregating signatures of BondCoins.
+    \item Each BondCoin is of unit denomination and cannot be divided into smaller values.
+    \item There is a maturity duration d associated with each BondCoin, say a month. After d time, a BondCoin gets automatically converted into a CashCoin. As an important side benefit, the maturity duration helps in disabling voting rights of dormant BondCoins.
+    \item The owner of each BondCoin can also convert it to a CashCoin before maturity but there is a penalty p associated with such a transaction. The convertor derives a value of [CashCoin - p] and p is distributed as fees to other validators.
+    \item BondCoins accrue transaction fees for participating in the consensus process. The fees collected during each block are equally distributed among the BondCoins.
+    \item BondCoins collectively determine, via consensus, the amount of fees to be charged for processing transactions. This is a key point. We will soon see that for any given number of BondCoins in the system, there is an equilibrium value for the fee amount to which it settles. Transaction validators can also force the fee value to a certain level in order to increase or decrease the number of validators in the system.
+
+\end{enumerate}
+
+\subsection{Benefits of holding BondCoins}
+
+\begin{enumerate}
+    \item Storage: Risk free time shifting of value.
+    \item Earn Fees: Holders of BondCoin earn a fraction of the transaction fees.
+    \item Speculation: BondCoin prices will fluctuate constantly. Speculators that believe that the BondCoin prices are low can buy them.
+\end{enumerate}
+
+\subsection{Costs of holding BondCoins}
+
+Holding BondCoins will lead to loss of liquidity. And, to convert them back before maturity would lead to penalty. So, BondCoins act as fixed deposit, you gain interest on them over their maturity period. But you can only take them out once they are fully matured. Otherwise, you will have to compromise with the interest (penalty).
+
+\subsection{CashCoins}
+
+\begin{enumerate}
+    \item CashCoins can exist in any denominations and hence are very liquid. You can buy coffee with CashCoin.
+    \item Fractions of CashCoin can be accumulated into a unit of CashCoin and further converted into a unit of BondCoin by the owner.
+\end{enumerate}
+
+\subsection{Benefits of holding CashCoins}
+
+CashCoins are highly liquid. They can be used in following manner :
+
+\begin{enumerate}
+    \item Transactions: People will hold CashCoins to buy goods and services.
+    \item Precautions: People will hold CashCoins for contingencies like medical emergencies or the sudden loss in value of a national currency.
+    \item Speculation: Speculators that believe that the BondCoin prices are too high can sell them and hold CashCoins instead guarding against possible drops in value of BondCoin.
+\end{enumerate}
+
+\subsection{Costs of holding CashCoins}
+
+The price of holding CashCoins is the transaction fees. As these coins could have levied transaction fees while they were not being used. Similar to interests that we gain while keeping our money in a bank.
+
+\section{Market Dynamics}
+What we have created with the dual asset types concept is a wonderful interplay between the demand for CashCoins, the demand for BondCoins and the transaction fees. Lets understand the interplay between CashCoins, BondCoins and transaction fees better by noting the costs and benefits of holding either. This is very similar to the interplay between the demand for cash, the demand for bonds and the central bank determined interest rate.
+
+\subsection{Demand Curve for CashCoin}
+
+\begin{figure} [!htbp]
+\centering    
+\subfigure[Demand Curve for CashCoin]{\label{fig31}\includegraphics[width=7cm]{dcfc.png}}
+\subfigure[Change in demand for CashCoin]{\label{fig32}\includegraphics[width=7cm]{cidfc.png}}
+\caption{Dynamics of CashCoin}
+\end{figure}
+
+The various sources of demand for CashCoins (transactions, precautionary and speculative) will vary negatively with transaction fees. An additional source of demand for CashCoins is from participants wanting lesser decentralization, faster throughputs and lower fees. Let’s label this demand as the higher network performance demand. Lower the fees, higher the demand for CashCoins.
+
+Lets suppose CC** is the total amount of CashCoins at some point in time. I.e., CC** is the supply of CashCoins. Then, the CashCoin market equilibrium will occur at transaction fee f** where the demand meets supply. Now, suppose CashCoin availability increases to CC*, the market equilibrium will occur at transaction fee f* where the demand curve meets the new supply.
+
+\subsection{Change in Demand for CashCoin}
+
+Previously, we have identified 4 sources of demands for CashCoins. i) transactions demand, ii) precautionary demand, iii) speculative demand and iv) higher network performance demand. The various sources of demand for CashCoins can change. For example, during festivals in light of higher retail spending, the transaction demand may rise moving the demand curve as shown in the above figure.
+
+\subsection{Demand Curve for BondCoin}
+
+The various sources of demand for BondCoins (storage, fees and speculative) will vary positively with transaction fees. An additional source of demand for BondCoins is from participants wanting more decentralization and who do not mind paying higher fees. Let’s label this demand as the higher decentralization demand. Higher the fees, higher the demand for BondCoins.
+
+\begin{figure} [!htbp]
+\centering    
+\subfigure[Demand Curve for BondCoin]{\label{fig33}\includegraphics[width=7cm]{dcfb.png}}
+\subfigure[Change in demand for BondCoin]{\label{fig34}\includegraphics[width=7cm]{cidfb.png}}
+\caption{Dynamics of BondCoin}
+\end{figure}
+
+Lets suppose BC* is the total number of BondCoins at some point in time. I.e., BC* is the supply of BondCoins. Then, the BondCoin market equilibrium will occur at transaction fee f* where the demand meets supply. Now, suppose BondCoin availability increases to BC**, the market equilibrium will occur at transaction fee f** where the demand curve meets the new supply.
+
+\subsection{Change in Demand for BondCoin}
+
+Previously, we have identified 4 sources of demands for BondCoins. i) storage demand, ii) fees demand, iii) speculative demand and iv) higher decentralization demand. The various sources of demand for BondCoins can change. For example, if the transaction fees increase in anticipation of subdued transaction volumes, the fee demand may rise moving the demand curve as shown in the above figure.
+
+\section{The Common Market Equilibrium}
+
+The supply of BondCoins is simply maxCoins - supply of CashCoins. As shown below, it can be represented by a single line. The supply curve intersects with the demand curves of CashCoin and BondCoin at the same point. This is the common market equilibrium for both CashCoins and BondCoins. There is of course a single fee value f for this common market equilibrium.
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[height=10cm]{tcme.png}
+\caption{The Common Market Equilibrium}
+\label{fig35}
+\end{figure}
+
+This common market equilibrium represents the steady state of the system that respects the aggregate demands and supplies for CashCoin and BondCoin. The number of BondCoins at this equilibrium represent the number of validators in the blockchain.
+
+\section{Modifying More}
+
+Here, we look at how we can change the current system by modifying some crucial parts. For instance, once the BondCoin owners are decided any Byzantine Fault Tolerant protocol can be used to bring a consensus among them.
+
+\subsection{Transaction Functions}
+
+In the existent system, the relationship between BondCoins and transaction fees is linear. This may create problems. If such is the case, then it might happen that BondCoins keep on increasing as transaction fees per BondCoin would be maximum at infinity only. Hence, we need to modify the current relationship between BondCoins and transaction fees.
+
+We define following terms :
+\begin{itemize}
+    \item Transaction Fees : Fees collected by the Bond Coin owners for working to add a new block to the ledger.
+    \item Max transaction fee \%ge : Max \%ge of transaction value that can be collected by the committee members as fees.
+    \item Transaction Function : A function that maps number of Bond Coin owners to a transaction fee \%ge. Maximum value can be Max transaction fee \%ge.
+\end{itemize}
+
+As we want the number of BondCoin owners to reach equilibrium in the steady state of operation, the transaction function must have a maxima. Hence, the transaction function must look like : 
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=14cm]{Pictures/desiredTF.png}
+\caption{Desired Transaction Function}
+\end{figure}
+
+Two things that can be adjusted here :
+\begin{itemize}
+    \item Anchor Point : Denoted by $a$. It is the number of bondcoins when the transaction fees gained by each bondcoin is maximized.
+    \item Max Transaction Fee \%ge : Denoted by $m$. It is the maximum transaction fee percentage a user will have to pay in the worst case.
+\end{itemize}
+
+We choose the function : $x^n*e^{-x}$ . Analysis of this function shows that the slope gets steeper as we increase the value of n.
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=14cm]{Pictures/analyseTF.png}
+\caption{Analysis of chosen Transaction Function}
+\end{figure}
+
+Now, we can keep $m$ and $a$ fixed or change them depending upon total number of users in the system or total number of active users in the system.
+
+Adjusting the function to give maxima for a bond coin owner at $a$, we get : \\
+\centerline{$f(x) = (nx/a)^n*e^{-nx/a}$}
+
+The function of total transaction fee \%ge paid by a user would be : \\
+\centerline{$g(x) = x*(nx/a)^n*e^{-nx/a}$}
+
+The maximum value of above function is : \\
+\centerline{$({a/n})*(n+1)^{n+1}*e^{-(n+1)}$}
+
+Adjusting the above function to give maximum transaction fee \%ge as m, we get : \\
+\centerline{$g(x) = m*((nx/{(n+1)a})^{n+1}*e^{n+1-{nx/a}}$}
+
+Doing same adjustments to $f(x)$, we get : \\
+\centerline{$f(x) = m*{1/x}*[nx/{(n+1)a}]^{n+1}*e^{n+1-nx/a}$}
+
+This function reaches maxima at $a$ and the value at maxima is :\\
+\centerline{$m*{e/a}*[n/{n+1}]^{n+1}$}
+
+This maximum value is inversely proportional to the value of $a$ and directly proportional to $m$ and is an increasing function with respect to $n$. Hence, more the value of exponent $n$, validators will be able to accrue more fees in the best case.
+
+\subsection{Allocating new BondCoins}
+
+Choosing new Committee members :
+\begin{itemize}
+    \item We assume that new BondCoin requests keep coming in.
+    \item A queue is maintained to keep track of current \& new members
+    \item Oldest members appear at the head of the queue \& new members appear at the tail of the queue
+    \item There is a logical boundary separating the current members and new members of the queue
+    \item The new members become current members only after $s$ blocks has passed
+\end{itemize}
+
+We can choose $s$ to be fixed or variable depending upon the number of current committee members.
+
+To filter the incoming BondCoin requests from the users, we keep 2 types of scores :
+\begin{itemize}
+    \item Cryptocurrency Participation Score or CPS
+    \item Transaction Variability Score or TVS
+\end{itemize}
+
+\subsubsection{Cryptocurrency Participation Score}
+
+\begin{itemize}
+    \item This score gives an idea about how much a user participates in the system (user's participation history)
+    \item Initially all users start with a score of threshold b.
+    \item We can either use this score as stake for Proof of Stake consensus (requires a random seed) or allow only those users who have a score greater than a threshold b.
+\end{itemize}
+
+The CPS at time t depends on CPS at time t-1 and Current Transaction Score (CTS). CTS is a number between 0 to 1.\\
+\centerline{$CPS_t = p*CPS_{t-1} + (1-p)*CTS_t$}
+
+Here, we can choose :
+\begin{itemize}
+    \item p : Probability weightage given to the participation history.
+    \item b : Threshold for sending bond coin requests.
+\end{itemize}
+
+An insight : Assuming p is 0.99 and b is 0.5, if a user has CPS 0 then it takes it 100 rounds to get to a score of 0.507 with a CTS of 0.8 in each round. From this point, if the user has CTS 0 for 100 rounds then CPS becomes 0.18
+
+Efficient implementation for calculating CPS :
+\begin{itemize}
+    \item Only needs to be calculated for those users who have done a transaction in the current round.
+    \item For those users who aren't taking part in transaction, only last block of transaction needs to be stored and when they send a request for being added in the committee or do a transaction, first the CTS is calculated for the last block using following formula :\\
+    If last transaction was done in block $t_1$ and current block is $t_2$ then all the $CTS_t$ for $t = t_1$ to $t_2-1$ would be 0. Hence,\\
+    \centerline{$CPS_{t_2} = CPS_{t_1}*p^{t_2-t_1} + (1-p)*CTS_{t_2}$}
+\end{itemize}
+
+Current Transaction Score Function : It is a function which gives a score between 0 to 1 based on the total transaction value of a user. Since, this function gives based on transaction value, it should increase steeply in the beginning and go on to saturate so that even low transaction values can contribute.
+
+The candidate functions are : $x^{1/n}$ and $(1-(1-x)^n)^{1/n}$
+
+\subsubsection{Transaction Variability Score}
+We can have another score which gives an idea about how many different people does the user transact with and we can use a combination of this and above score to add a new member to committee. This is done to prevent adversarial users from transacting within themselves to gain high CPS. But,
+\begin{itemize}
+    \item For finding how many different users does a user transact with, we need to keep track of these users (storage constraints) or go back and check the user's transactions when needed (computation constraints)
+    \item It might happen that even honest users also transact with a small group of people.
+\end{itemize}
+
+Hence, it does not seem a good parameter for selecting allocating new BondCoins.
